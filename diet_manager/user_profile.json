@@ -1,0 +1,8 @@
+{
+  "gender": "Male",
+  "height_cm": 178.0,
+  "age": 18,
+  "weight_kg": 75.0,
+  "activity_level": "Moderate",
+  "calorie_method": "HarrisBenedict"
+}
