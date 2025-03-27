@@ -1,0 +1,129 @@
+{
+  "users": {
+    "paarth": {
+      "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1",
+      "username": "paarth",
+      "password": "12345",
+      "profile": {
+        "gender": "Male",
+        "height_cm": 170.0,
+        "age": 20,
+        "calorie_method": "HarrisBenedict",
+        "weight_kg": 70.0,
+        "activity_level": "Moderate"
+      }
+    }
+  },
+  "basic_foods": {
+    "chicken_breast": {
+      "id": "chicken_breast",
+      "name": "Chicken Breast",
+      "keywords": [
+        "meat",
+        "protein",
+        "lean"
+      ],
+      "calories_per_serving": 165.0
+    },
+    "bread": {
+      "id": "bread",
+      "name": "Bread Slice",
+      "keywords": [
+        "grain",
+        "carbs"
+      ],
+      "calories_per_serving": 80.0
+    },
+    "brown_rice": {
+      "id": "brown_rice",
+      "name": "Brown Rice",
+      "keywords": [
+        "grain",
+        "carbs",
+        "whole grain"
+      ],
+      "calories_per_serving": 215.0
+    },
+    "egg": {
+      "id": "egg",
+      "name": "Egg",
+      "keywords": [
+        "protein",
+        "breakfast"
+      ],
+      "calories_per_serving": 78.0
+    },
+    "banana": {
+      "id": "banana",
+      "name": "Banana",
+      "keywords": [
+        "fruit",
+        "fresh",
+        "potassium"
+      ],
+      "calories_per_serving": 105.0
+    },
+    "apple": {
+      "id": "apple",
+      "name": "Apple",
+      "keywords": [
+        "fruit",
+        "fresh",
+        "snack"
+      ],
+      "calories_per_serving": 95.0
+    }
+  },
+  "composite_foods": {
+    "sandwich": {
+      "id": "sandwich",
+      "name": "Basic Sandwich",
+      "keywords": [
+        "lunch",
+        "quick",
+        "easy"
+      ],
+      "components": [
+        {
+          "food_id": "chicken_breast",
+          "servings": 0.5
+        },
+        {
+          "food_id": "bread",
+          "servings": 2.0
+        }
+      ]
+    },
+    "banana_oatmeal": {
+      "id": "banana_oatmeal",
+      "name": "Banana Oatmeal",
+      "keywords": [
+        "breakfast",
+        "healthy"
+      ],
+      "components": [
+        {
+          "food_id": "banana",
+          "servings": 1.0
+        }
+      ]
+    }
+  },
+  "food_logs": {
+    "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1": [
+      {
+        "date": "2025-03-28",
+        "food_id": "bread",
+        "servings": 1.7,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-03-28",
+        "food_id": "bread",
+        "servings": 1.2,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      }
+    ]
+  },
+  "current_user": ""
+}

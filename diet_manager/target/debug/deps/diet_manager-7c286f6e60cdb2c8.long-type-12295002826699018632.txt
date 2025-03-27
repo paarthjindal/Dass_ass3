@@ -1,1 +1,0 @@
-Box<(dyn for<'a> FnOnce(&'a mut DailyLogManager) -> Result<(), std::string::String> + Send + 'static)>

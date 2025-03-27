@@ -1,0 +1,116 @@
+{
+    "users": {},
+    "basic_foods": {
+      "apple": {
+        "id": "apple",
+        "name": "Apple",
+        "keywords": ["fruit", "fresh", "snack"],
+        "calories_per_serving": 95.0
+      },
+      "banana": {
+        "id": "banana",
+        "name": "Banana",
+        "keywords": ["fruit", "fresh", "potassium"],
+        "calories_per_serving": 105.0
+      },
+      "chicken_breast": {
+        "id": "chicken_breast",
+        "name": "Chicken Breast",
+        "keywords": ["meat", "protein", "lean"],
+        "calories_per_serving": 165.0
+      },
+      "brown_rice": {
+        "id": "brown_rice",
+        "name": "Brown Rice",
+        "keywords": ["grain", "carbs", "whole grain"],
+        "calories_per_serving": 215.0
+      },
+      "egg": {
+        "id": "egg",
+        "name": "Egg",
+        "keywords": ["protein", "breakfast"],
+        "calories_per_serving": 78.0
+      },
+      "milk": {
+        "id": "milk",
+        "name": "Milk",
+        "keywords": ["dairy", "calcium", "drink"],
+        "calories_per_serving": 122.0
+      },
+      "spinach": {
+        "id": "spinach",
+        "name": "Spinach",
+        "keywords": ["vegetable", "leafy green", "iron"],
+        "calories_per_serving": 23.0
+      },
+      "bread": {
+        "id": "bread",
+        "name": "Whole Wheat Bread",
+        "keywords": ["grain", "carbs", "sandwich"],
+        "calories_per_serving": 69.0
+      },
+      "salmon": {
+        "id": "salmon",
+        "name": "Salmon Fillet",
+        "keywords": ["fish", "protein", "omega-3"],
+        "calories_per_serving": 208.0
+      },
+      "olive_oil": {
+        "id": "olive_oil",
+        "name": "Olive Oil",
+        "keywords": ["oil", "fat", "cooking"],
+        "calories_per_serving": 119.0
+      }
+    },
+    "composite_foods": {
+      "oatmeal_breakfast": {
+        "id": "oatmeal_breakfast",
+        "name": "Oatmeal Breakfast",
+        "keywords": ["breakfast", "healthy", "morning"],
+        "components": {
+          "milk": 1.0,
+          "banana": 1.0
+        }
+      },
+      "chicken_salad": {
+        "id": "chicken_salad",
+        "name": "Chicken Salad",
+        "keywords": ["lunch", "protein", "healthy"],
+        "components": {
+          "chicken_breast": 1.0,
+          "spinach": 2.0,
+          "olive_oil": 0.5
+        }
+      },
+      "sandwich": {
+        "id": "sandwich",
+        "name": "Basic Sandwich",
+        "keywords": ["lunch", "quick", "easy"],
+        "components": {
+          "bread": 2.0,
+          "chicken_breast": 0.5
+        }
+      },
+      "protein_breakfast": {
+        "id": "protein_breakfast",
+        "name": "Protein Breakfast",
+        "keywords": ["breakfast", "protein", "fitness"],
+        "components": {
+          "egg": 2.0,
+          "spinach": 1.0,
+          "bread": 1.0
+        }
+      },
+      "salmon_dinner": {
+        "id": "salmon_dinner",
+        "name": "Salmon Dinner",
+        "keywords": ["dinner", "protein", "omega-3"],
+        "components": {
+          "salmon": 1.0,
+          "brown_rice": 1.0,
+          "olive_oil": 0.5
+        }
+      }
+    },
+    "food_logs": {}
+  }
