@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use serde_json;
 use crate::models::Database;

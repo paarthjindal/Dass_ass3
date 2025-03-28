@@ -70,7 +70,7 @@ pub fn apply_theme(ctx: &egui::Context) {
     ctx.set_style(style);
 }
 
-pub fn heading_style(ui: &mut egui::Ui) -> egui::TextStyle {
+pub fn heading_style(_ui: &mut egui::Ui) -> egui::TextStyle {
     let heading = egui::TextStyle::Heading;
     heading
 }

@@ -1,89 +1,198 @@
 use eframe::egui;
 use crate::models::{Database, Gender, ActivityLevel, CalorieCalculationMethod};
 use crate::app_state::AppState;
-use uuid::Uuid;
+use crate::gui::styling;
 
-pub struct UpdateProfileScreen;
+pub struct UpdateProfileScreen {
+    success_message: Option<String>,
+    error_message: Option<String>,
+}
 
 impl UpdateProfileScreen {
     pub fn new() -> Self {
-        Self
+        Self {
+            success_message: None,
+            error_message: None,
+        }
     }
 
-    pub fn render(
-        &mut self,
-        ui: &mut egui::Ui,
-        db: &mut Database,
-        current_state: &mut AppState,
-    ) {
-        ui.heading("Update Profile");
+    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+        ui.vertical_centered(|ui| {
+            ui.heading(egui::RichText::new("Update Profile").size(28.0).strong());
+            ui.add_space(4.0);
+            ui.label("Adjust your personal information and preferences");
+            ui.add_space(20.0);
+        });
 
-        if let Some(user) = db.users.get_mut(&db.current_user) {
-            // Gender selection
-            ui.label("Gender:");
-            ui.horizontal(|ui| {
-                if ui.button("Male").clicked() {
-                    user.profile.gender = Gender::Male;
+        if let Some(user) = db.users.values_mut().find(|u| u.user_id == db.current_user).cloned() {
+            let mut user_clone = user.clone();
+
+            styling::card_frame().show(ui, |ui| {
+                // User information section
+                styling::section_header(ui, "Personal Information");
+
+                // Username (read-only)
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("👤").size(20.0));
+                    ui.vertical(|ui| {
+                        ui.label("Username:");
+                        ui.add_enabled(false, egui::TextEdit::singleline(&mut user_clone.username)
+                            .desired_width(300.0));
+                        ui.label(egui::RichText::new("Username cannot be changed").size(12.0).italics());
+                    });
+                });
+
+                ui.add_space(16.0);
+
+                // Physical profile section
+                styling::section_header(ui, "Physical Profile");
+
+                // Gender selection
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("⚧").size(20.0));
+                    ui.label("Gender:");
+                    ui.radio_value(&mut user_clone.profile.gender, Gender::Male, "Male");
+                    ui.radio_value(&mut user_clone.profile.gender, Gender::Female, "Female");
+                });
+
+                ui.add_space(8.0);
+
+                // Height slider
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("📏").size(20.0));
+                    ui.vertical(|ui| {
+                        ui.label("Height (cm):");
+                        ui.add(egui::Slider::new(&mut user_clone.profile.height_cm, 100.0..=250.0)
+                            .text("cm")
+                            .clamp_to_range(true)
+                            .smart_aim(false)
+                            .fixed_decimals(1));
+                    });
+                });
+
+                ui.add_space(8.0);
+
+                // Age slider
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("🗓️").size(20.0));
+                    ui.vertical(|ui| {
+                        ui.label("Age:");
+                        ui.add(egui::Slider::new(&mut user_clone.profile.age, 1..=120)
+                            .text("years")
+                            .clamp_to_range(true)
+                            .smart_aim(false));
+                    });
+                });
+
+                ui.add_space(8.0);
+
+                // Weight slider
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("⚖️").size(20.0));
+                    ui.vertical(|ui| {
+                        ui.label("Weight (kg):");
+                        ui.add(egui::Slider::new(&mut user_clone.profile.weight_kg, 30.0..=250.0)
+                            .text("kg")
+                            .clamp_to_range(true)
+                            .smart_aim(false)
+                            .fixed_decimals(1));
+                    });
+                });
+
+                ui.add_space(16.0);
+
+                // Activity level section
+                styling::section_header(ui, "Activity Level");
+
+                ui.vertical(|ui| {
+                    ui.radio_value(&mut user_clone.profile.activity_level, ActivityLevel::Sedentary,
+                        "📚 Sedentary (little or no exercise)");
+                    ui.radio_value(&mut user_clone.profile.activity_level, ActivityLevel::Light,
+                        "🚶 Light (exercise 1-3 days/week)");
+                    ui.radio_value(&mut user_clone.profile.activity_level, ActivityLevel::Moderate,
+                        "🏃 Moderate (exercise 3-5 days/week)");
+                    ui.radio_value(&mut user_clone.profile.activity_level, ActivityLevel::VeryActive,
+                        "🏋️ Very Active (exercise 6-7 days/week)");
+                    ui.radio_value(&mut user_clone.profile.activity_level, ActivityLevel::ExtraActive,
+                        "🏆 Extra Active (very intense exercise/physical job)");
+                });
+
+                ui.add_space(16.0);
+
+                // Calorie calculation method
+                styling::section_header(ui, "Calorie Calculation Method");
+
+                ui.vertical(|ui| {
+                    ui.radio_value(&mut user_clone.profile.calorie_method, CalorieCalculationMethod::HarrisBenedict,
+                        "Harris-Benedict Formula");
+                    ui.radio_value(&mut user_clone.profile.calorie_method, CalorieCalculationMethod::MifflinStJeor,
+                        "Mifflin-St Jeor Formula");
+                });
+
+                // Calculate calorie target based on current settings
+                let target_calories = user_clone.profile.calculate_target_calories();
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Daily Calorie Target:").strong());
+                    ui.label(egui::RichText::new(format!("{:.0} kcal", target_calories))
+                        .size(18.0)
+                        .color(styling::AppTheme::default().accent_color)
+                        .strong());
+                });
+
+                ui.add_space(16.0);
+
+                // Status messages
+                if let Some(ref success) = self.success_message {
+                    ui.colored_label(
+                        styling::AppTheme::default().success_color,
+                        egui::RichText::new(success).size(14.0).strong()
+                    );
+                    ui.add_space(8.0);
                 }
-                if ui.button("Female").clicked() {
-                    user.profile.gender = Gender::Female;
+
+                if let Some(ref error) = self.error_message {
+                    ui.colored_label(
+                        styling::AppTheme::default().error_color,
+                        egui::RichText::new(error).size(14.0).strong()
+                    );
+                    ui.add_space(8.0);
                 }
+
+                // Action buttons
+                ui.horizontal(|ui| {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if styling::warning_button(ui, "Cancel").clicked() {
+                            *current_state = AppState::Home;
+                        }
+
+                        ui.add_space(10.0);
+
+                        if styling::success_button(ui, "Save Changes").clicked() {
+                            // Update the actual user in the database
+                            if let Some(user) = db.users.get_mut(&user_clone.username) {
+                                user.profile = user_clone.profile.clone();
+                                self.success_message = Some("Profile updated successfully!".to_string());
+                                self.error_message = None;
+                            } else {
+                                self.error_message = Some("Failed to update profile".to_string());
+                                self.success_message = None;
+                            }
+                        }
+                    });
+                });
             });
-
-            // Height input
-            ui.label("Height (cm):");
-            ui.add(egui::Slider::new(&mut user.profile.height_cm, 100.0..=250.0));
-
-            // Age input
-            ui.label("Age:");
-            ui.add(egui::Slider::new(&mut user.profile.age, 1..=120));
-
-            // Weight input
-            ui.label("Weight (kg):");
-            ui.add(egui::Slider::new(&mut user.profile.weight_kg, 30.0..=200.0));
-
-            // Activity level selection
-            ui.label("Activity Level:");
-            ui.horizontal(|ui| {
-                if ui.button("Sedentary").clicked() {
-                    user.profile.activity_level = ActivityLevel::Sedentary;
+        } else {
+            // No user found
+            ui.vertical_centered(|ui| {
+                ui.add_space(40.0);
+                ui.label(egui::RichText::new("User not found").size(18.0).color(styling::AppTheme::default().error_color));
+                ui.add_space(16.0);
+                if styling::warning_button(ui, "Back to Home").clicked() {
+                    *current_state = AppState::Home;
                 }
-                if ui.button("Light").clicked() {
-                    user.profile.activity_level = ActivityLevel::Light;
-                }
-                if ui.button("Moderate").clicked() {
-                    user.profile.activity_level = ActivityLevel::Moderate;
-                }
-                if ui.button("Very Active").clicked() {
-                    user.profile.activity_level = ActivityLevel::VeryActive;
-                }
-                if ui.button("Extra Active").clicked() {
-                    user.profile.activity_level = ActivityLevel::ExtraActive;
-                }
+                ui.add_space(40.0);
             });
-
-            // Calorie calculation method selection
-            ui.label("Calorie Calculation Method:");
-            ui.horizontal(|ui| {
-                if ui.button("Harris-Benedict").clicked() {
-                    user.profile.calorie_method = CalorieCalculationMethod::HarrisBenedict;
-                }
-                if ui.button("Mifflin-St Jeor").clicked() {
-                    user.profile.calorie_method = CalorieCalculationMethod::MifflinStJeor;
-                }
-            });
-        }
-
-        // Back button
-        if ui.button("Back").clicked() {
-            *current_state = AppState::Home;
-        }
-
-        // Save button
-        if ui.button("Save").clicked() {
-            // Save changes to the database
-            // This might involve writing back to a persistent storage if needed
-            println!("Profile updated for user: {}", db.current_user);
         }
     }
 }
