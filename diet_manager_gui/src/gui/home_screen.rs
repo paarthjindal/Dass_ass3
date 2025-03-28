@@ -124,6 +124,7 @@ impl HomeScreen {
                 }
             });
         });
+
     }
 
     // Helper method for creating attractive menu buttons

@@ -54,6 +54,26 @@ impl Default for DietManagerApp {
     }
 }
 
+impl DietManagerApp {
+    // Add this helper method for recording actions in the undo stack
+    pub fn record_action(&mut self, description: &str) {
+        // Create a snapshot of the current database
+        self.undo_manager.record_action(self.db.clone(), description);
+
+        // Save to file whenever we record an action
+        if let Err(e) = save_database(&self.db) {
+            eprintln!("Failed to save database after '{}': {}", description, e);
+        }
+    }
+
+    // Add this to initialize the undo manager
+    pub fn initialize_undo_manager(&mut self) {
+        self.undo_manager.initialize(self.db.clone());
+    }
+}
+
+
+
 impl eframe::App for DietManagerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         styling::apply_theme(ctx);

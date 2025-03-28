@@ -1,11 +1,14 @@
 use eframe::egui;
-use crate::models::{Database, Gender, ActivityLevel, CalorieCalculationMethod};
+use crate::models::{Database, Gender, ActivityLevel, CalorieCalculationMethod, User};
 use crate::app_state::AppState;
 use crate::gui::styling;
 
 pub struct UpdateProfileScreen {
     success_message: Option<String>,
     error_message: Option<String>,
+    editing_user: Option<User>, // Store the user we're editing
+    initialized: bool,         // Track if we've loaded the user
+    should_return_home: bool,  // Flag to track navigation
 }
 
 impl UpdateProfileScreen {
@@ -13,10 +16,32 @@ impl UpdateProfileScreen {
         Self {
             success_message: None,
             error_message: None,
+            editing_user: None,
+            initialized: false,
+            should_return_home: false,
         }
     }
 
     pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+        // Check if we should return to home screen
+        if self.should_return_home {
+            self.initialized = false;
+            self.editing_user = None;
+            self.success_message = None;
+            self.error_message = None;
+            self.should_return_home = false;
+            *current_state = AppState::Home;
+            return;
+        }
+
+        // Initialize editing_user once when the screen is first shown
+        if !self.initialized {
+            if let Some(user) = db.users.values().find(|u| u.user_id == db.current_user) {
+                self.editing_user = Some(user.clone());
+            }
+            self.initialized = true;
+        }
+
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Update Profile").size(28.0).strong());
             ui.add_space(4.0);
@@ -24,8 +49,10 @@ impl UpdateProfileScreen {
             ui.add_space(20.0);
         });
 
-        if let Some(user) = db.users.values_mut().find(|u| u.user_id == db.current_user).cloned() {
-            let mut user_clone = user.clone();
+        if let Some(ref mut user_clone) = self.editing_user {
+            // Create a local flag to track cancel button press
+            let mut cancel_clicked = false;
+            let mut save_clicked = false;
 
             styling::card_frame().show(ui, |ui| {
                 // User information section
@@ -163,25 +190,36 @@ impl UpdateProfileScreen {
                 ui.horizontal(|ui| {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if styling::warning_button(ui, "Cancel").clicked() {
-                            *current_state = AppState::Home;
+                            // Set flag to handle outside the closure
+                            cancel_clicked = true;
                         }
 
                         ui.add_space(10.0);
 
                         if styling::success_button(ui, "Save Changes").clicked() {
-                            // Update the actual user in the database
-                            if let Some(user) = db.users.get_mut(&user_clone.username) {
-                                user.profile = user_clone.profile.clone();
-                                self.success_message = Some("Profile updated successfully!".to_string());
-                                self.error_message = None;
-                            } else {
-                                self.error_message = Some("Failed to update profile".to_string());
-                                self.success_message = None;
-                            }
+                            // Set flag to handle outside the closure
+                            save_clicked = true;
                         }
                     });
                 });
             });
+
+            // Handle button actions outside the closure to avoid borrowing conflicts
+            if cancel_clicked {
+                self.should_return_home = true;
+            }
+
+            if save_clicked {
+                // Update the actual user in the database
+                if let Some(user) = db.users.get_mut(&user_clone.username) {
+                    user.profile = user_clone.profile.clone();
+                    self.success_message = Some("Profile updated successfully!".to_string());
+                    self.error_message = None;
+                } else {
+                    self.error_message = Some("Failed to update profile".to_string());
+                    self.success_message = None;
+                }
+            }
         } else {
             // No user found
             ui.vertical_centered(|ui| {
@@ -189,7 +227,8 @@ impl UpdateProfileScreen {
                 ui.label(egui::RichText::new("User not found").size(18.0).color(styling::AppTheme::default().error_color));
                 ui.add_space(16.0);
                 if styling::warning_button(ui, "Back to Home").clicked() {
-                    *current_state = AppState::Home;
+                    // Set flag to return to home
+                    self.should_return_home = true;
                 }
                 ui.add_space(40.0);
             });

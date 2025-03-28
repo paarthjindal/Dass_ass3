@@ -15,24 +15,15 @@
     }
   },
   "basic_foods": {
-    "chicken_breast": {
-      "id": "chicken_breast",
-      "name": "Chicken Breast",
+    "banana": {
+      "id": "banana",
+      "name": "Banana",
       "keywords": [
-        "meat",
-        "protein",
-        "lean"
+        "fruit",
+        "fresh",
+        "potassium"
       ],
-      "calories_per_serving": 165.0
-    },
-    "bread": {
-      "id": "bread",
-      "name": "Bread Slice",
-      "keywords": [
-        "grain",
-        "carbs"
-      ],
-      "calories_per_serving": 80.0
+      "calories_per_serving": 105.0
     },
     "brown_rice": {
       "id": "brown_rice",
@@ -53,15 +44,15 @@
       ],
       "calories_per_serving": 78.0
     },
-    "banana": {
-      "id": "banana",
-      "name": "Banana",
+    "chicken_breast": {
+      "id": "chicken_breast",
+      "name": "Chicken Breast",
       "keywords": [
-        "fruit",
-        "fresh",
-        "potassium"
+        "meat",
+        "protein",
+        "lean"
       ],
-      "calories_per_serving": 105.0
+      "calories_per_serving": 165.0
     },
     "apple": {
       "id": "apple",
@@ -72,9 +63,32 @@
         "snack"
       ],
       "calories_per_serving": 95.0
+    },
+    "bread": {
+      "id": "bread",
+      "name": "Bread Slice",
+      "keywords": [
+        "grain",
+        "carbs"
+      ],
+      "calories_per_serving": 80.0
     }
   },
   "composite_foods": {
+    "banana_oatmeal": {
+      "id": "banana_oatmeal",
+      "name": "Banana Oatmeal",
+      "keywords": [
+        "breakfast",
+        "healthy"
+      ],
+      "components": [
+        {
+          "food_id": "banana",
+          "servings": 1.0
+        }
+      ]
+    },
     "sandwich": {
       "id": "sandwich",
       "name": "Basic Sandwich",
@@ -91,20 +105,6 @@
         {
           "food_id": "bread",
           "servings": 2.0
-        }
-      ]
-    },
-    "banana_oatmeal": {
-      "id": "banana_oatmeal",
-      "name": "Banana Oatmeal",
-      "keywords": [
-        "breakfast",
-        "healthy"
-      ],
-      "components": [
-        {
-          "food_id": "banana",
-          "servings": 1.0
         }
       ]
     }
