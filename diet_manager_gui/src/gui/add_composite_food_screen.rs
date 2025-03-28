@@ -1,5 +1,6 @@
 use eframe::egui;
-use crate::models::{Database, CompositeFood, FoodComponent};use crate::app_state::AppState;
+use crate::models::{Database, CompositeFood, FoodComponent};
+use crate::app_state::AppState;
 use crate::gui::styling;
 
 pub struct AddCompositeFoodScreen {
@@ -28,12 +29,14 @@ impl AddCompositeFoodScreen {
     }
 
     pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+        
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Create Composite Food").size(28.0).strong());
             ui.add_space(4.0);
             ui.label("Combine multiple foods into a recipe or meal");
             ui.add_space(20.0);
         });
+        egui::ScrollArea::vertical().show(ui, |ui| {
 
         styling::card_frame().show(ui, |ui| {
             // Basic food information
@@ -204,18 +207,25 @@ impl AddCompositeFoodScreen {
                 });
             });
         });
+        });
     }
 
+
     fn add_component(&mut self, _ui: &mut egui::Ui) {
+        // Clear previous error
+        self.error_message = None;
+
+        // Validate food selection
         if self.current_food_id.is_empty() {
             self.error_message = Some("Please select a food to add".to_string());
             return;
         }
 
+        // Validate servings
         let servings = match self.current_servings.parse::<f32>() {
             Ok(value) if value > 0.0 => value,
             _ => {
-                self.error_message = Some("Please enter a valid number of servings".to_string());
+                self.error_message = Some("Please enter a valid number of servings (must be positive)".to_string());
                 return;
             }
         };
@@ -234,30 +244,49 @@ impl AddCompositeFoodScreen {
         // Reset selection fields
         self.current_food_id.clear();
         self.current_servings = "1.0".to_string();
-        self.error_message = None;
     }
 
-    fn save_composite_food(&mut self, db: &mut Database, current_state: &mut AppState) {
-        // Validate inputs
-        if self.new_food_id.is_empty() {
-            self.error_message = Some("Food identifier is required".to_string());
+
+     fn save_composite_food(&mut self, db: &mut Database, current_state: &mut AppState) {
+        // Clear previous error
+        self.error_message = None;
+
+        // Validate food ID
+        if self.new_food_id.trim().is_empty() {
+            self.error_message = Some("Food Identifier cannot be empty".to_string());
             return;
         }
 
-        if self.new_food_name.is_empty() {
-            self.error_message = Some("Food name is required".to_string());
+        // Check for duplicate food ID
+        if db.basic_foods.contains_key(&self.new_food_id) || 
+           db.composite_foods.contains_key(&self.new_food_id) {
+            self.error_message = Some("A food with this identifier already exists".to_string());
             return;
         }
 
+        // Validate food name
+        if self.new_food_name.trim().is_empty() {
+            self.error_message = Some("Food Name cannot be empty".to_string());
+            return;
+        }
+
+        // Validate keywords
+        let keywords = self.new_food_keywords
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<String>>();
+
+        if keywords.is_empty() {
+            self.error_message = Some("Please provide at least one valid keyword".to_string());
+            return;
+        }
+
+        // Validate components
         if self.selected_components.is_empty() {
             self.error_message = Some("At least one component is required".to_string());
             return;
         }
-
-        // Create keywords vector
-        let keywords = self.new_food_keywords.split(',')
-            .map(|s| s.trim().to_string())
-            .collect();
 
         // Create and save the composite food
         let food = CompositeFood {
@@ -273,8 +302,7 @@ impl AddCompositeFoodScreen {
         self.clear_fields();
         *current_state = AppState::Home;
     }
-
-    fn clear_fields(&mut self) {
+     fn clear_fields(&mut self) {
         self.new_food_id.clear();
         self.new_food_name.clear();
         self.new_food_keywords.clear();

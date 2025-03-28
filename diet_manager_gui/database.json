@@ -6,7 +6,7 @@
       "password": "12345",
       "profile": {
         "gender": "Male",
-        "height_cm": 170.0,
+        "height_cm": 195.7,
         "age": 20,
         "calorie_method": "HarrisBenedict",
         "weight_kg": 70.0,
@@ -15,25 +15,24 @@
     }
   },
   "basic_foods": {
-    "banana": {
-      "id": "banana",
-      "name": "Banana",
+    "chicken_breast": {
+      "id": "chicken_breast",
+      "name": "Chicken Breast",
       "keywords": [
-        "fruit",
-        "fresh",
-        "potassium"
+        "meat",
+        "protein",
+        "lean"
       ],
-      "calories_per_serving": 105.0
+      "calories_per_serving": 165.0
     },
-    "brown_rice": {
-      "id": "brown_rice",
-      "name": "Brown Rice",
+    "bread": {
+      "id": "bread",
+      "name": "Bread Slice",
       "keywords": [
         "grain",
-        "carbs",
-        "whole grain"
+        "carbs"
       ],
-      "calories_per_serving": 215.0
+      "calories_per_serving": 80.0
     },
     "egg": {
       "id": "egg",
@@ -44,15 +43,13 @@
       ],
       "calories_per_serving": 78.0
     },
-    "chicken_breast": {
-      "id": "chicken_breast",
-      "name": "Chicken Breast",
+    "Milk": {
+      "id": "Milk",
+      "name": "Milk",
       "keywords": [
-        "meat",
-        "protein",
-        "lean"
+        "Calcium"
       ],
-      "calories_per_serving": 165.0
+      "calories_per_serving": 90.0
     },
     "apple": {
       "id": "apple",
@@ -64,14 +61,25 @@
       ],
       "calories_per_serving": 95.0
     },
-    "bread": {
-      "id": "bread",
-      "name": "Bread Slice",
+    "brown_rice": {
+      "id": "brown_rice",
+      "name": "Brown Rice",
       "keywords": [
         "grain",
-        "carbs"
+        "carbs",
+        "whole grain"
       ],
-      "calories_per_serving": 80.0
+      "calories_per_serving": 215.0
+    },
+    "banana": {
+      "id": "banana",
+      "name": "Banana",
+      "keywords": [
+        "fruit",
+        "fresh",
+        "potassium"
+      ],
+      "calories_per_serving": 105.0
     }
   },
   "composite_foods": {
@@ -122,8 +130,20 @@
         "food_id": "bread",
         "servings": 1.2,
         "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-03-28",
+        "food_id": "chicken_breast",
+        "servings": 3.6,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-03-29",
+        "food_id": "chicken_breast",
+        "servings": 3.5,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
       }
     ]
   },
-  "current_user": ""
+  "current_user": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
 }

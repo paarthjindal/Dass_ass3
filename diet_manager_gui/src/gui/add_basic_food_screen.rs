@@ -7,6 +7,7 @@ pub struct AddBasicFoodScreen {
     new_food_id: String,
     new_food_keywords: String,
     new_food_calories: String,
+    error_message: Option<String>,
 }
 
 impl AddBasicFoodScreen {
@@ -15,6 +16,7 @@ impl AddBasicFoodScreen {
             new_food_id: String::new(),
             new_food_keywords: String::new(),
             new_food_calories: String::new(),
+            error_message: None,
         }
     }
 
@@ -25,6 +27,12 @@ impl AddBasicFoodScreen {
             ui.label("Create a new basic food item");
             ui.add_space(20.0);
         });
+
+        // Display error message if any
+        if let Some(error) = &self.error_message {
+            ui.colored_label(egui::Color32::RED, error);
+            ui.add_space(12.0);
+        }
 
         styling::card_frame().show(ui, |ui| {
             // Food ID field with enhanced styling
@@ -76,9 +84,7 @@ impl AddBasicFoodScreen {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if styling::warning_button(ui, "Cancel").clicked() {
                         // Clear fields and return to home
-                        self.new_food_id.clear();
-                        self.new_food_keywords.clear();
-                        self.new_food_calories.clear();
+                        self.reset();
                         *current_state = AppState::Home;
                     }
 
@@ -92,13 +98,61 @@ impl AddBasicFoodScreen {
         });
     }
 
+    fn reset(&mut self) {
+        self.new_food_id.clear();
+        self.new_food_keywords.clear();
+        self.new_food_calories.clear();
+        self.error_message = None;
+    }
+
     fn save_food(&mut self, db: &mut Database, current_state: &mut AppState) {
+        // Clear previous error
+        self.error_message = None;
+
+        // Validate food ID
+        if self.new_food_id.trim().is_empty() {
+            self.error_message = Some("Food Identifier cannot be empty".to_string());
+            return;
+        }
+
+        // Validate keywords
+        if self.new_food_keywords.trim().is_empty() {
+            self.error_message = Some("Keywords cannot be empty".to_string());
+            return;
+        }
+
+        // Validate calories
+        let calories = match self.new_food_calories.parse::<f32>() {
+            Ok(cal) => {
+                if cal <= 0.0 {
+                    self.error_message = Some("Calories must be a positive number".to_string());
+                    return;
+                }
+                cal
+            },
+            Err(_) => {
+                self.error_message = Some("Invalid calories value. Please enter a number".to_string());
+                return;
+            }
+        };
+
+        // Check for duplicate food ID
+        if db.basic_foods.contains_key(&self.new_food_id) {
+            self.error_message = Some("A food with this identifier already exists".to_string());
+            return;
+        }
+
+        // Validate and process keywords
         let keywords = self.new_food_keywords
             .split(',')
             .map(|s| s.trim().to_string())
-            .collect();
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<String>>();
 
-        let calories = self.new_food_calories.parse().unwrap_or(0.0);
+        if keywords.is_empty() {
+            self.error_message = Some("Please provide at least one valid keyword".to_string());
+            return;
+        }
 
         let food = BasicFood {
             id: self.new_food_id.clone(),
@@ -109,11 +163,8 @@ impl AddBasicFoodScreen {
 
         db.basic_foods.insert(self.new_food_id.clone(), food);
 
-        // Clear fields for next use
-        self.new_food_id.clear();
-        self.new_food_keywords.clear();
-        self.new_food_calories.clear();
-
+        // Reset fields and return to home
+        self.reset();
         *current_state = AppState::Home;
     }
 }

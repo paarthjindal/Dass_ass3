@@ -4,6 +4,7 @@ use crate::models::{ Database, FoodLogEntry };
 use crate::app_state::AppState;
 use crate::gui::styling;
 use crate::models::{ BasicFood, CompositeFood};
+
 pub struct AddFoodToLogScreen {
     selected_food_id: String,
     servings: f32,
@@ -140,7 +141,6 @@ impl AddFoodToLogScreen {
             });
 
             ui.add_space(8.0);
-            // Replace the food search code with this approach:
 
             // Food selection
             styling::section_header(ui, "Available Foods");
@@ -165,25 +165,24 @@ impl AddFoodToLogScreen {
                                     return true;
                                 }
 
+                                // Combine name and keywords for searching
+                                let search_text = format!(
+                                    "{} {}",
+                                    food.name.to_lowercase(),
+                                    food.keywords.iter().map(|k| k.to_lowercase()).collect::<Vec<_>>().join(" ")
+                                );
+
                                 if self.match_all_keywords {
                                     keywords_vec
                                         .iter()
-                                        .all(|kw|
-                                            food.keywords
-                                                .iter()
-                                                .any(|fk|
-                                                    fk.to_lowercase().contains(&kw.to_lowercase())
-                                                )
+                                        .all(|kw| 
+                                            search_text.contains(&kw.to_lowercase())
                                         )
                                 } else {
                                     keywords_vec
                                         .iter()
-                                        .any(|kw|
-                                            food.keywords
-                                                .iter()
-                                                .any(|fk|
-                                                    fk.to_lowercase().contains(&kw.to_lowercase())
-                                                )
+                                        .any(|kw| 
+                                            search_text.contains(&kw.to_lowercase())
                                         )
                                 }
                             })
@@ -235,7 +234,7 @@ impl AddFoodToLogScreen {
                         });
                     }
 
-                    // Show composite foods - same approach
+                    // Show composite foods - similar approach
                     if self.show_composite_foods {
                         // Create a vector of matching foods to avoid borrowing issues
                         let matching_foods: Vec<(&String, &CompositeFood)> = db.composite_foods
@@ -245,25 +244,24 @@ impl AddFoodToLogScreen {
                                     return true;
                                 }
 
+                                // Combine name and keywords for searching
+                                let search_text = format!(
+                                    "{} {}",
+                                    food.name.to_lowercase(),
+                                    food.keywords.iter().map(|k| k.to_lowercase()).collect::<Vec<_>>().join(" ")
+                                );
+
                                 if self.match_all_keywords {
                                     keywords_vec
                                         .iter()
-                                        .all(|kw|
-                                            food.keywords
-                                                .iter()
-                                                .any(|fk|
-                                                    fk.to_lowercase().contains(&kw.to_lowercase())
-                                                )
+                                        .all(|kw| 
+                                            search_text.contains(&kw.to_lowercase())
                                         )
                                 } else {
                                     keywords_vec
                                         .iter()
-                                        .any(|kw|
-                                            food.keywords
-                                                .iter()
-                                                .any(|fk|
-                                                    fk.to_lowercase().contains(&kw.to_lowercase())
-                                                )
+                                        .any(|kw| 
+                                            search_text.contains(&kw.to_lowercase())
                                         )
                                 }
                             })
@@ -272,7 +270,6 @@ impl AddFoodToLogScreen {
                         ui.collapsing(
                             egui::RichText::new("Composite Foods").size(16.0).strong(),
                             |ui| {
-                                // ... same grid code as above but for composite foods
                                 egui::Grid
                                     ::new("composite_foods_grid")
                                     .striped(true)
@@ -338,7 +335,6 @@ impl AddFoodToLogScreen {
                     }
                 });
 
-            // Remove the matches_keywords method as we've inlined the logic
             ui.add_space(16.0);
 
             // Error message
@@ -365,26 +361,6 @@ impl AddFoodToLogScreen {
                 });
             });
         });
-    }
-
-    fn matches_keywords(&self, food_keywords: &[String], filter_keywords: &[&str]) -> bool {
-        if filter_keywords.is_empty() {
-            return true;
-        }
-
-        if self.match_all_keywords {
-            filter_keywords
-                .iter()
-                .all(|kw|
-                    food_keywords.iter().any(|fk| fk.to_lowercase().contains(&kw.to_lowercase()))
-                )
-        } else {
-            filter_keywords
-                .iter()
-                .any(|kw|
-                    food_keywords.iter().any(|fk| fk.to_lowercase().contains(&kw.to_lowercase()))
-                )
-        }
     }
 
     fn add_to_log(&mut self, db: &mut Database, current_state: &mut AppState) {
