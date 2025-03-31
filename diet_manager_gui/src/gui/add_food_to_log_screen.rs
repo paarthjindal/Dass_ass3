@@ -4,7 +4,7 @@ use crate::models::{ Database, FoodLogEntry };
 use crate::app_state::AppState;
 use crate::gui::styling;
 use crate::models::{ BasicFood, CompositeFood};
-
+use crate::gui::undo_manager::UndoManager;
 pub struct AddFoodToLogScreen {
     selected_food_id: String,
     servings: f32,
@@ -30,7 +30,7 @@ impl AddFoodToLogScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Add Food to Log").size(28.0).strong());
             ui.add_space(4.0);
@@ -175,13 +175,13 @@ impl AddFoodToLogScreen {
                                 if self.match_all_keywords {
                                     keywords_vec
                                         .iter()
-                                        .all(|kw| 
+                                        .all(|kw|
                                             search_text.contains(&kw.to_lowercase())
                                         )
                                 } else {
                                     keywords_vec
                                         .iter()
-                                        .any(|kw| 
+                                        .any(|kw|
                                             search_text.contains(&kw.to_lowercase())
                                         )
                                 }
@@ -254,13 +254,13 @@ impl AddFoodToLogScreen {
                                 if self.match_all_keywords {
                                     keywords_vec
                                         .iter()
-                                        .all(|kw| 
+                                        .all(|kw|
                                             search_text.contains(&kw.to_lowercase())
                                         )
                                 } else {
                                     keywords_vec
                                         .iter()
-                                        .any(|kw| 
+                                        .any(|kw|
                                             search_text.contains(&kw.to_lowercase())
                                         )
                                 }
@@ -356,14 +356,15 @@ impl AddFoodToLogScreen {
                     ui.add_space(10.0);
 
                     if styling::success_button(ui, "Add to Log").clicked() {
-                        self.add_to_log(db, current_state);
+                        self.add_to_log(db, current_state, undo_manager);
+
                     }
                 });
             });
         });
     }
 
-    fn add_to_log(&mut self, db: &mut Database, current_state: &mut AppState) {
+    fn add_to_log(&mut self, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
         if self.selected_food_id.is_empty() {
             self.error_message = Some("Please select a food to add".to_string());
             return;
@@ -373,6 +374,12 @@ impl AddFoodToLogScreen {
             self.error_message = Some("Please enter a valid number of servings".to_string());
             return;
         }
+
+        // Get food name for better description
+        let food_name = self.get_food_name(db, &self.selected_food_id);
+
+        // Record state before change
+        undo_manager.record_action(db.clone(), &format!("Added {} to food log", food_name));
 
         let selected_date_str = self.selected_date.format("%Y-%m-%d").to_string();
 

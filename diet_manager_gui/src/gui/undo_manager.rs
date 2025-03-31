@@ -1,126 +1,61 @@
 use crate::models::Database;
-use std::collections::VecDeque;
-
-/// Represents a database state along with a description of the action that created it
-#[derive(Clone)]
-pub struct DatabaseState {
-    /// The database state
-    pub database: Database,
-    /// Description of the action that led to this state
-    pub description: String,
-}
 
 pub struct UndoManager {
-    /// Maximum number of states to keep in history
-    max_states: usize,
-    /// History of previous states for undo (most recent at the end)
-    undo_stack: VecDeque<DatabaseState>,
-    /// History of undone states for redo (most recently undone at the end)
-    redo_stack: VecDeque<DatabaseState>,
-    /// Current database state (not in either stack)
-    current_state: Option<DatabaseState>,
+    history: Vec<(Database, String)>,  // (Database snapshot, action description)
+    capacity: usize,
+    current_index: usize,
 }
 
 impl UndoManager {
-    /// Create a new UndoManager with the given maximum number of states
-    pub fn new(max_states: usize) -> Self {
+    pub fn new(capacity: usize) -> Self {
         Self {
-            max_states,
-            undo_stack: VecDeque::with_capacity(max_states),
-            redo_stack: VecDeque::with_capacity(max_states),
-            current_state: None,
+            history: Vec::with_capacity(capacity),
+            capacity,
+            current_index: 0,
         }
     }
 
-    /// Initialize with a starting state
-    pub fn initialize(&mut self, database: Database) {
-        self.current_state = Some(DatabaseState {
-            database,
-            description: "Initial state".to_string(),
-        });
-        self.undo_stack.clear();
-        self.redo_stack.clear();
+    pub fn initialize(&mut self, initial_db: Database) {
+        self.history.clear();
+        self.history.push((initial_db, "Initial state".to_string()));
+        self.current_index = 0;
     }
 
-    /// Record a new state after an action
-    pub fn record_action(&mut self, database: Database, description: &str) {
-        // Store the current state in the undo stack if it exists
-        if let Some(current) = self.current_state.take() {
-            self.undo_stack.push_back(current);
-
-            // Maintain maximum stack size
-            if self.undo_stack.len() > self.max_states {
-                self.undo_stack.pop_front();
-            }
+    pub fn record_action(&mut self, db_snapshot: Database, description: &str) {
+        // First check if history has items to avoid subtraction overflow
+        if !self.history.is_empty() && self.current_index < self.history.len() - 1 {
+            self.history.truncate(self.current_index + 1);
         }
 
-        // Set the new state as current
-        self.current_state = Some(DatabaseState {
-            database,
-            description: description.to_string(),
-        });
+        // Add new action
+        self.history.push((db_snapshot, description.to_string()));
+        self.current_index = self.history.len() - 1;
 
-        // Clear the redo stack since we've taken a new action
-        self.redo_stack.clear();
+        // Remove oldest entries if exceeding capacity
+        if self.history.len() > self.capacity {
+            self.history.remove(0);
+            self.current_index = self.history.len() - 1;
+        }
     }
 
-    /// Undo the last action
-    pub fn undo(&mut self) -> Option<Database> {
-        // Can't undo if no prior states
-        if self.undo_stack.is_empty() {
-            return None;
-        }
-
-        // Move current state to redo stack
-        if let Some(current) = self.current_state.take() {
-            self.redo_stack.push_back(current);
-
-            // Maintain maximum stack size
-            if self.redo_stack.len() > self.max_states {
-                self.redo_stack.pop_front();
-            }
-        }
-
-        // Get previous state
-        let previous = self.undo_stack.pop_back()?;
-        let db_clone = previous.database.clone();
-        self.current_state = Some(previous);
-
-        Some(db_clone)
-    }
-
-    /// Redo a previously undone action
-    pub fn redo(&mut self) -> Option<Database> {
-        // Can't redo if no undone states
-        if self.redo_stack.is_empty() {
-            return None;
-        }
-
-        // Move current state to undo stack
-        if let Some(current) = self.current_state.take() {
-            self.undo_stack.push_back(current);
-
-            // Maintain maximum stack size
-            if self.undo_stack.len() > self.max_states {
-                self.undo_stack.pop_front();
-            }
-        }
-
-        // Get next state
-        let next = self.redo_stack.pop_back()?;
-        let db_clone = next.database.clone();
-        self.current_state = Some(next);
-
-        Some(db_clone)
-    }
-
-    /// Check if undo is available
     pub fn can_undo(&self) -> bool {
-        !self.undo_stack.is_empty()
+        self.current_index > 0
     }
 
-    /// Check if redo is available
-    pub fn can_redo(&self) -> bool {
-        !self.redo_stack.is_empty()
+    pub fn undo(&mut self) -> Option<(Database, String)> {
+        if self.can_undo() {
+            self.current_index -= 1;
+            let (db, desc) = &self.history[self.current_index];
+            return Some((db.clone(), desc.clone()));
+        }
+        None
+    }
+
+    pub fn last_action_description(&self) -> Option<String> {
+        if self.history.len() > 1 && self.current_index > 0 {
+            Some(self.history[self.current_index].1.clone())
+        } else {
+            None
+        }
     }
 }

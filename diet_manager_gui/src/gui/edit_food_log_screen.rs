@@ -1,12 +1,13 @@
 use eframe::egui;
-use chrono::{NaiveDate, Local};
-use crate::models::{Database, FoodLogEntry};
+use chrono::{ NaiveDate, Local };
+use crate::models::{ Database, FoodLogEntry };
 use crate::app_state::AppState;
 use crate::gui::styling;
-
+use crate::gui::undo_manager::UndoManager;
 pub struct EditFoodLogScreen {
     selected_date: NaiveDate,
     editing_servings: f32,
+    selected_entry_index: Option<usize>, // Add this field
 }
 
 impl EditFoodLogScreen {
@@ -14,10 +15,17 @@ impl EditFoodLogScreen {
         Self {
             selected_date: Local::now().date_naive(),
             editing_servings: 1.0,
+            selected_entry_index: None, // Initialize to None
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+    pub fn render(
+        &mut self,
+        ui: &mut egui::Ui,
+        db: &mut Database,
+        current_state: &mut AppState,
+        undo_manager: &mut UndoManager
+    ) {
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Edit Food Log").size(28.0).strong());
             ui.add_space(4.0);
@@ -38,7 +46,8 @@ impl EditFoodLogScreen {
                 }
 
                 ui.label(
-                    egui::RichText::new(self.selected_date.format("%A, %B %d, %Y").to_string())
+                    egui::RichText
+                        ::new(self.selected_date.format("%A, %B %d, %Y").to_string())
                         .size(16.0)
                 );
 
@@ -88,7 +97,9 @@ impl EditFoodLogScreen {
                     for (idx, entry) in entries.iter().enumerate() {
                         if entry.date == selected_date_str {
                             let food_name = self.get_food_name(db, &entry.food_id);
-                            let calories = db.get_food_calories(&entry.food_id).unwrap_or(0.0) * entry.servings;
+                            let calories =
+                                db.get_food_calories(&entry.food_id).unwrap_or(0.0) *
+                                entry.servings;
                             entries_data.push((idx, entry.clone(), food_name, calories));
                         }
                     }
@@ -98,7 +109,8 @@ impl EditFoodLogScreen {
                 let mut to_remove = Vec::new();
 
                 // Display entries
-                egui::ScrollArea::vertical()
+                egui::ScrollArea
+                    ::vertical()
                     .max_height(300.0)
                     .show(ui, |ui| {
                         // Create a table-like header
@@ -117,7 +129,9 @@ impl EditFoodLogScreen {
                         // FIX: Use for-loop without &mut reference to avoid nested mutable references
                         for i in 0..entries_data.len() {
                             let db_index = entries_data[i].0;
-                            let calories_per_serving = db.get_food_calories(&entries_data[i].1.food_id).unwrap_or(0.0);
+                            let calories_per_serving = db
+                                .get_food_calories(&entries_data[i].1.food_id)
+                                .unwrap_or(0.0);
 
                             ui.push_id(db_index, |ui| {
                                 ui.horizontal(|ui| {
@@ -128,22 +142,42 @@ impl EditFoodLogScreen {
 
                                     // Servings slider
                                     let mut servings = entries_data[i].1.servings;
-                                    if ui.add(
-                                        egui::Slider::new(&mut servings, 0.1..=10.0)
-                                            .text("servings")
-                                            .clamp_to_range(true)
-                                            .step_by(0.1)
-                                            .fixed_decimals(1)
-                                    ).changed() {
+                                    if
+                                        ui
+                                            .add(
+                                                egui::Slider
+                                                    ::new(&mut servings, 0.1..=10.0)
+                                                    .text("servings")
+                                                    .clamp_to_range(true)
+                                                    .step_by(0.1)
+                                                    .fixed_decimals(1)
+                                            )
+                                            .changed()
+                                    {
                                         // Update our local copy
                                         entries_data[i].1.servings = servings;
+                                        if ui.button("Update Servings").clicked() {
+                                            // First gather all the info we need before any mutable borrows
+                                            let entry_id = entries_data[i].1.food_id.clone();
+                                            let food_name = entries_data[i].2.clone();
+                                            let old_servings = entries_data[i].1.servings;
+                                            let new_servings = servings;
 
-                                        // Update the entry in the database
-                                        if let Some(entries) = db.food_logs.get_mut(&db.current_user) {
-                                            if let Some(db_entry) = entries.get_mut(db_index) {
-                                                db_entry.servings = servings;
+                                            // Record state before change - using cloned data
+                                            undo_manager.record_action(
+                                                db.clone(),
+                                                &format!("Changed servings of {} from {:.1} to {:.1}", food_name, old_servings, new_servings)
+                                            );
+
+                                            // Now do the mutation
+                                            if let Some(entries) = db.food_logs.get_mut(&db.current_user) {
+                                                if let Some(entry) = entries.get_mut(db_index) {
+                                                    entry.servings = new_servings;
+                                                }
                                             }
                                         }
+
+
                                     }
 
                                     ui.add_space(40.0);
@@ -155,10 +189,16 @@ impl EditFoodLogScreen {
                                     ui.add_space(40.0);
 
                                     // Delete button
-                                    if ui.button(
-                                        egui::RichText::new("Delete")
-                                            .color(styling::AppTheme::default().error_color)
-                                    ).clicked() {
+                                    if ui.button(egui::RichText::new("Delete").color(styling::AppTheme::default().error_color)).clicked() {
+                                        // Get food name for better description
+                                        let food_name = entries_data[i].2.clone();
+
+                                        // Record state before deletion
+                                        undo_manager.record_action(
+                                            db.clone(),
+                                            &format!("Removed {} from food log", food_name)
+                                        );
+
                                         to_remove.push(db_index);
                                     }
                                 });

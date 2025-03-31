@@ -1,4 +1,5 @@
 use eframe::egui;
+use std::io::Write;  // Add this import
 use crate::models::Database;
 use crate::database::{ load_database, save_database };
 use crate::gui::{
@@ -42,7 +43,7 @@ impl Default for DietManagerApp {
             current_state: AppState::Login,
             login_screen: LoginScreen::new(),
             register_screen: RegisterScreen::new(),
-            home_screen: HomeScreen,
+            home_screen: HomeScreen::default(), // Change this line
             add_basic_food_screen: AddBasicFoodScreen::new(),
             add_composite_food_screen: AddCompositeFoodScreen::new(),
             view_daily_log_screen: ViewDailyLogScreen::new(),
@@ -56,6 +57,7 @@ impl Default for DietManagerApp {
 
 impl DietManagerApp {
     // Add this helper method for recording actions in the undo stack
+    // Add this to the record_action method in DietManagerApp
     pub fn record_action(&mut self, description: &str) {
         // Create a snapshot of the current database
         self.undo_manager.record_action(self.db.clone(), description);
@@ -64,6 +66,26 @@ impl DietManagerApp {
         if let Err(e) = save_database(&self.db) {
             eprintln!("Failed to save database after '{}': {}", description, e);
         }
+
+        // Optional: Write to a separate log file
+        let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let log_entry = format!("[{}] {}\n", timestamp, description);
+
+        std::fs::OpenOptions
+            ::new()
+            .create(true)
+            .append(true)
+            .open("diet_manager_actions.log")
+            .map(|mut file| file.write_all(log_entry.as_bytes()))
+            .unwrap_or_else(|e| {
+                eprintln!("Failed to write to log file: {}", e);
+                Ok(())
+            });
+    }
+
+    // Make sure to initialize the undo manager when logging in
+    pub fn on_login(&mut self) {
+        self.initialize_undo_manager();
     }
 
     // Add this to initialize the undo manager
@@ -72,33 +94,40 @@ impl DietManagerApp {
     }
 }
 
-
-
 impl eframe::App for DietManagerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         styling::apply_theme(ctx);
         // Add a top bar with app title and user info
-      // Add a top bar with app title and user info
-      egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-        ui.horizontal(|ui| {
-            ui.heading("Diet Manager");
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if !self.db.current_user.is_empty() {
-                    // Find username directly by looking up the user_id
-                    if let Some(user) = self.db.users.values().find(|u| u.user_id == self.db.current_user) {
-                        ui.label(format!("Logged in as: {}", user.username));
+        // Add a top bar with app title and user info
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.heading("Diet Manager");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if !self.db.current_user.is_empty() {
+                        // Find username directly by looking up the user_id
+                        if
+                            let Some(user) = self.db.users
+                                .values()
+                                .find(|u| u.user_id == self.db.current_user)
+                        {
+                            ui.label(format!("Logged in as: {}", user.username));
+                        }
                     }
-                }
+                });
             });
+            ui.add_space(8.0);
         });
-        ui.add_space(8.0);
-    });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             styling::card_frame().show(ui, |ui| {
                 match self.current_state {
                     AppState::Login =>
-                        self.login_screen.render(ui, &mut self.db, &mut self.current_state),
+                        self.login_screen.render(
+                            ui,
+                            &mut self.db,
+                            &mut self.current_state,
+                            &mut self.undo_manager
+                        ),
                     AppState::Register =>
                         self.register_screen.render(ui, &mut self.db, &mut self.current_state),
                     AppState::Home =>
@@ -112,28 +141,37 @@ impl eframe::App for DietManagerApp {
                         self.add_basic_food_screen.render(
                             ui,
                             &mut self.db,
-                            &mut self.current_state
+                            &mut self.current_state,
+                            &mut self.undo_manager
                         ),
                     AppState::AddCompositeFood =>
                         self.add_composite_food_screen.render(
                             ui,
                             &mut self.db,
-                            &mut self.current_state
+                            &mut self.current_state,
+                            &mut self.undo_manager
                         ),
                     AppState::ViewDailyLog =>
                         self.view_daily_log_screen.render(
                             ui,
                             &mut self.db,
-                            &mut self.current_state
+                            &mut self.current_state,
+                            &mut self.undo_manager
                         ),
                     AppState::AddFoodToLog =>
                         self.add_food_to_log_screen.render(
                             ui,
                             &mut self.db,
-                            &mut self.current_state
+                            &mut self.current_state,
+                            &mut self.undo_manager
                         ),
                     AppState::EditFoodLog =>
-                        self.edit_food_log_screen.render(ui, &mut self.db, &mut self.current_state),
+                        self.edit_food_log_screen.render(
+                            ui,
+                            &mut self.db,
+                            &mut self.current_state,
+                            &mut self.undo_manager
+                        ),
                     AppState::UpdateProfile =>
                         self.update_profile_screen.render(
                             ui,

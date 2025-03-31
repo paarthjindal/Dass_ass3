@@ -2,7 +2,7 @@ use eframe::egui;
 use crate::models::{Database, CompositeFood, FoodComponent};
 use crate::app_state::AppState;
 use crate::gui::styling;
-
+use crate::gui::undo_manager::UndoManager;
 pub struct AddCompositeFoodScreen {
     new_food_id: String,
     new_food_name: String,
@@ -28,8 +28,8 @@ impl AddCompositeFoodScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
-        
+    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
+
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Create Composite Food").size(28.0).strong());
             ui.add_space(4.0);
@@ -258,7 +258,7 @@ impl AddCompositeFoodScreen {
         }
 
         // Check for duplicate food ID
-        if db.basic_foods.contains_key(&self.new_food_id) || 
+        if db.basic_foods.contains_key(&self.new_food_id) ||
            db.composite_foods.contains_key(&self.new_food_id) {
             self.error_message = Some("A food with this identifier already exists".to_string());
             return;

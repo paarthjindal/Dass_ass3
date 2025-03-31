@@ -4,7 +4,7 @@ use chrono::{NaiveDate, Local, Duration};
 use crate::models::{Database, FoodLogEntry};
 use crate::app_state::AppState;
 use crate::gui::styling;
-
+use crate::gui::undo_manager::UndoManager;
 pub struct ViewDailyLogScreen {
     selected_date: NaiveDate,
 }
@@ -16,7 +16,7 @@ impl ViewDailyLogScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Daily Nutrition Log").size(28.0).strong());
             ui.add_space(4.0);
@@ -166,6 +166,15 @@ impl ViewDailyLogScreen {
                                 ui.label(food_name);
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                     if ui.button(egui::RichText::new("❌").color(styling::AppTheme::default().error_color)).clicked() {
+                                        // Get food name for better description
+                                        let food_name = db.basic_foods.get(&entry.food_id)
+                                            .map(|f| f.name.clone())
+                                            .or_else(|| db.composite_foods.get(&entry.food_id).map(|f| f.name.clone()))
+                                            .unwrap_or_else(|| entry.food_id.clone());
+
+                                        // Record state before deletion
+                                        undo_manager.record_action(db.clone(), &format!("Removed {} from food log", food_name));
+
                                         if let Some(entries) = db.food_logs.get_mut(&db.current_user) {
                                             if let Some(pos) = entries.iter().position(|e|
                                                 e.date == entry.date &&

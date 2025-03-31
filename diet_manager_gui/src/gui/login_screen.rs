@@ -2,7 +2,7 @@ use eframe::egui;
 use crate::models::Database;
 use crate::app_state::AppState;
 use crate::gui::styling;
-
+use crate::gui::undo_manager::UndoManager;
 pub struct LoginScreen {
     username: String,
     password: String,
@@ -18,7 +18,7 @@ impl LoginScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
         ui.vertical_centered(|ui| {
             ui.add_space(40.0);
             ui.heading(egui::RichText::new("Welcome to Diet Manager")

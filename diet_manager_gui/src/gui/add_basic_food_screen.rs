@@ -2,7 +2,7 @@ use eframe::egui;
 use crate::models::{Database, BasicFood};
 use crate::app_state::AppState;
 use crate::gui::styling;
-
+use crate::gui::undo_manager::UndoManager;
 pub struct AddBasicFoodScreen {
     new_food_id: String,
     new_food_keywords: String,
@@ -20,7 +20,7 @@ impl AddBasicFoodScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState) {
+    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
         ui.vertical_centered(|ui| {
             ui.heading(egui::RichText::new("Add Basic Food").size(28.0).strong());
             ui.add_space(4.0);
