@@ -3,6 +3,7 @@ use crate::models::Database;
 use crate::app_state::AppState;
 use crate::gui::styling;
 use crate::gui::undo_manager::UndoManager;
+
 pub struct LoginScreen {
     username: String,
     password: String,
@@ -18,17 +19,25 @@ impl LoginScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui, db: &mut Database, current_state: &mut AppState, undo_manager: &mut UndoManager) {
+    pub fn render(
+        &mut self,
+        ui: &mut egui::Ui,
+        db: &mut Database,
+        current_state: &mut AppState,
+        undo_manager: &mut UndoManager
+    ) {
         ui.vertical_centered(|ui| {
             ui.add_space(40.0);
-            ui.heading(egui::RichText::new("Welcome to Diet Manager")
-                .size(32.0)
-                .color(styling::AppTheme::default().accent_color)
-                .strong());
+            ui.heading(
+                egui::RichText
+                    ::new("Welcome to Diet Manager")
+                    .size(32.0)
+                    .color(styling::AppTheme::default().accent_color)
+                    .strong()
+            );
 
             ui.add_space(8.0);
-            ui.label(egui::RichText::new("Track your nutrition goals with ease")
-                .size(16.0));
+            ui.label(egui::RichText::new("Track your nutrition goals with ease").size(16.0));
 
             ui.add_space(30.0);
 
@@ -43,9 +52,12 @@ impl LoginScreen {
                 // Username field with improved styling
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("👤").size(20.0));
-                    ui.add(egui::TextEdit::singleline(&mut self.username)
-                        .hint_text("Enter your username")
-                        .desired_width(250.0));
+                    ui.add(
+                        egui::TextEdit
+                            ::singleline(&mut self.username)
+                            .hint_text("Enter your username")
+                            .desired_width(250.0)
+                    );
                 });
 
                 ui.add_space(8.0);
@@ -53,10 +65,13 @@ impl LoginScreen {
                 // Password field with improved styling
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("🔒").size(20.0));
-                    ui.add(egui::TextEdit::singleline(&mut self.password)
-                        .password(true)
-                        .hint_text("Enter your password")
-                        .desired_width(250.0));
+                    ui.add(
+                        egui::TextEdit
+                            ::singleline(&mut self.password)
+                            .password(true)
+                            .hint_text("Enter your password")
+                            .desired_width(250.0)
+                    );
                 });
 
                 ui.add_space(20.0);
@@ -65,7 +80,7 @@ impl LoginScreen {
                 ui.vertical_centered(|ui| {
                     if styling::primary_button(ui, "Login").clicked() {
                         // Your existing login logic here
-                        self.handle_login(db, current_state);
+                        self.handle_login(db, current_state,undo_manager);
                     }
 
                     ui.add_space(8.0);
@@ -89,7 +104,7 @@ impl LoginScreen {
     }
 
     // Add your existing login logic method here
-    fn handle_login(&mut self, db: &mut Database, current_state: &mut AppState) {
+    fn handle_login(&mut self, db: &mut Database, current_state: &mut AppState,undo_manager: &mut UndoManager) {
         // Implement your login logic here
         // This is just a placeholder - replace with your actual login code
         if self.username.is_empty() || self.password.is_empty() {
@@ -102,6 +117,10 @@ impl LoginScreen {
             if user.password == self.password {
                 db.current_user = user.user_id.clone();
                 *current_state = AppState::Home;
+
+                // Clear and initialize undo manager with fresh state
+                undo_manager.clear();
+                undo_manager.initialize(db.clone());
             } else {
                 self.error_message = Some("Invalid password".to_string());
             }

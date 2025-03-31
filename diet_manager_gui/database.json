@@ -6,7 +6,7 @@
       "password": "12345",
       "profile": {
         "gender": "Male",
-        "height_cm": 195.7,
+        "height_cm": 169.7,
         "age": 20,
         "calorie_method": "HarrisBenedict",
         "weight_kg": 70.0,
@@ -15,15 +15,41 @@
     }
   },
   "basic_foods": {
-    "chicken_breast": {
-      "id": "chicken_breast",
-      "name": "Chicken Breast",
+    "brown_rice": {
+      "id": "brown_rice",
+      "name": "Brown Rice",
       "keywords": [
-        "meat",
-        "protein",
-        "lean"
+        "grain",
+        "carbs",
+        "whole grain"
       ],
-      "calories_per_serving": 165.0
+      "calories_per_serving": 215.0
+    },
+    "Milk": {
+      "id": "Milk",
+      "name": "Milk",
+      "keywords": [
+        "Calcium"
+      ],
+      "calories_per_serving": 90.0
+    },
+    "egg": {
+      "id": "egg",
+      "name": "Egg",
+      "keywords": [
+        "protein",
+        "breakfast"
+      ],
+      "calories_per_serving": 78.0
+    },
+    "bread": {
+      "id": "bread",
+      "name": "Bread Slice",
+      "keywords": [
+        "grain",
+        "carbs"
+      ],
+      "calories_per_serving": 80.0
     },
     "apple": {
       "id": "apple",
@@ -35,22 +61,15 @@
       ],
       "calories_per_serving": 95.0
     },
-    "bread": {
-      "id": "bread",
-      "name": "Bread Slice",
+    "chicken_breast": {
+      "id": "chicken_breast",
+      "name": "Chicken Breast",
       "keywords": [
-        "grain",
-        "carbs"
+        "meat",
+        "protein",
+        "lean"
       ],
-      "calories_per_serving": 80.0
-    },
-    "Milk": {
-      "id": "Milk",
-      "name": "Milk",
-      "keywords": [
-        "Calcium"
-      ],
-      "calories_per_serving": 90.0
+      "calories_per_serving": 165.0
     },
     "banana": {
       "id": "banana",
@@ -61,42 +80,9 @@
         "potassium"
       ],
       "calories_per_serving": 105.0
-    },
-    "egg": {
-      "id": "egg",
-      "name": "Egg",
-      "keywords": [
-        "protein",
-        "breakfast"
-      ],
-      "calories_per_serving": 78.0
-    },
-    "brown_rice": {
-      "id": "brown_rice",
-      "name": "Brown Rice",
-      "keywords": [
-        "grain",
-        "carbs",
-        "whole grain"
-      ],
-      "calories_per_serving": 215.0
     }
   },
   "composite_foods": {
-    "banana_oatmeal": {
-      "id": "banana_oatmeal",
-      "name": "Banana Oatmeal",
-      "keywords": [
-        "breakfast",
-        "healthy"
-      ],
-      "components": [
-        {
-          "food_id": "banana",
-          "servings": 1.0
-        }
-      ]
-    },
     "sandwich": {
       "id": "sandwich",
       "name": "Basic Sandwich",
@@ -113,6 +99,20 @@
         {
           "food_id": "bread",
           "servings": 2.0
+        }
+      ]
+    },
+    "banana_oatmeal": {
+      "id": "banana_oatmeal",
+      "name": "Banana Oatmeal",
+      "keywords": [
+        "breakfast",
+        "healthy"
+      ],
+      "components": [
+        {
+          "food_id": "banana",
+          "servings": 1.0
         }
       ]
     }

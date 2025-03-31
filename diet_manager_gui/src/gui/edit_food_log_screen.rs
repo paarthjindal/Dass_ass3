@@ -4,10 +4,12 @@ use crate::models::{ Database, FoodLogEntry };
 use crate::app_state::AppState;
 use crate::gui::styling;
 use crate::gui::undo_manager::UndoManager;
+
 pub struct EditFoodLogScreen {
     selected_date: NaiveDate,
     editing_servings: f32,
-    selected_entry_index: Option<usize>, // Add this field
+    selected_entry_index: Option<usize>,
+    editing_entry_index: Option<usize>, // Added to track which entry is being edited
 }
 
 impl EditFoodLogScreen {
@@ -15,7 +17,8 @@ impl EditFoodLogScreen {
         Self {
             selected_date: Local::now().date_naive(),
             editing_servings: 1.0,
-            selected_entry_index: None, // Initialize to None
+            selected_entry_index: None,
+            editing_entry_index: None, // Initialize the new field
         }
     }
 
@@ -43,6 +46,7 @@ impl EditFoodLogScreen {
                     self.selected_date = self.selected_date
                         .pred_opt()
                         .unwrap_or(self.selected_date);
+                    self.editing_entry_index = None; // Reset when changing date
                 }
 
                 ui.label(
@@ -59,6 +63,7 @@ impl EditFoodLogScreen {
                     self.selected_date = self.selected_date
                         .succ_opt()
                         .unwrap_or(self.selected_date);
+                    self.editing_entry_index = None; // Reset when changing date
                 }
             });
 
@@ -126,7 +131,7 @@ impl EditFoodLogScreen {
 
                         ui.separator();
 
-                        // FIX: Use for-loop without &mut reference to avoid nested mutable references
+                        // Use for-loop to avoid nested mutable references
                         for i in 0..entries_data.len() {
                             let db_index = entries_data[i].0;
                             let calories_per_serving = db
@@ -135,78 +140,89 @@ impl EditFoodLogScreen {
 
                             ui.push_id(db_index, |ui| {
                                 ui.horizontal(|ui| {
-                                    // Food name - FIXED: Clone to make a new String
+                                    // Food name
                                     ui.label(egui::RichText::new(&entries_data[i].2).strong());
 
                                     ui.add_space(40.0);
 
-                                    // Servings slider
-                                    let mut servings = entries_data[i].1.servings;
-                                    ui.add(
-                                        egui::Slider
-                                            ::new(&mut servings, 0.1..=10.0)
-                                            .text("servings")
-                                            .clamp_to_range(true)
-                                            .step_by(0.1)
-                                            .fixed_decimals(1)
-                                    );
+                                    // Check if this is the entry we're currently editing
+                                    if self.editing_entry_index != Some(i) {
+                                        self.editing_servings = entries_data[i].1.servings;
+                                    }
 
-                                    // Add the update button separately from the slider change event
-                                    if ui.button("Update Servings").clicked() {
-                                        // First gather all the info we need before any mutable borrows
-                                        let entry_id = entries_data[i].1.food_id.clone();
-                                        let food_name = entries_data[i].2.clone();
-                                        let old_servings = entries_data[i].1.servings;
-
-                                        // Record state before change - using cloned data
-                                        undo_manager.record_action(
-                                            db.clone(),
-                                            &format!(
-                                                "Changed servings of {} from {:.1} to {:.1}",
-                                                food_name,
-                                                old_servings,
-                                                servings
-                                            )
+                                    // Servings editing - using DragValue for more precision
+                                    ui.horizontal(|ui| {
+                                        // Show the current value
+                                        let response = ui.add(
+                                            egui::DragValue::new(&mut self.editing_servings)
+                                                .speed(0.1)
+                                                .clamp_range(0.1..=10.0)
+                                                .fixed_decimals(1)
+                                                .suffix(" servings")
                                         );
 
-                                        // Now do the mutation
-                                        if
-                                            let Some(entries) = db.food_logs.get_mut(
-                                                &db.current_user
-                                            )
-                                        {
-                                            if let Some(entry) = entries.get_mut(db_index) {
-                                                // Update the entry in the database
-                                                entry.servings = servings;
+                                        // If value changed, mark this as the active editing entry
+                                        if response.changed() {
+                                            self.editing_entry_index = Some(i);
+                                        }
 
-                                                // Also update our local copy
-                                                entries_data[i].1.servings = servings;
+                                        // Update button
+                                        if ui.button("✓").clicked() {
+                                            // First gather all the info we need
+                                            let food_name = entries_data[i].2.clone();
+                                            let old_servings = entries_data[i].1.servings;
+                                            let new_servings = self.editing_servings;
 
-                                                // Save the database immediately
-                                                if let Err(e) = crate::database::save_database(db) {
-                                                    eprintln!("Failed to save database after updating servings: {}", e);
+                                            if old_servings != new_servings {
+                                                // Record state before change
+                                                undo_manager.record_action(
+                                                    db.clone(),
+                                                    &format!(
+                                                        "Changed servings of {} from {:.1} to {:.1}",
+                                                        food_name, old_servings, new_servings
+                                                    )
+                                                );
+
+                                                // Update the database
+                                                if let Some(entries) = db.food_logs.get_mut(&db.current_user) {
+                                                    if let Some(entry) = entries.get_mut(db_index) {
+                                                        entry.servings = new_servings;
+
+                                                        // Update our local copy too
+                                                        entries_data[i].1.servings = new_servings;
+
+                                                        // Save immediately
+                                                        if let Err(e) = crate::database::save_database(db) {
+                                                            eprintln!("Failed to save database: {}", e);
+                                                        }
+                                                    }
                                                 }
                                             }
+
+                                            // Done editing
+                                            self.editing_entry_index = None;
                                         }
-                                    }
+                                    });
 
                                     ui.add_space(40.0);
 
-                                    // Calories
-                                    let updated_calories = calories_per_serving * servings;
+                                    // Calories - always show updated calculation
+                                    let current_servings = if self.editing_entry_index == Some(i) {
+                                        self.editing_servings
+                                    } else {
+                                        entries_data[i].1.servings
+                                    };
+
+                                    let updated_calories = calories_per_serving * current_servings;
                                     ui.label(format!("{:.0} kcal", updated_calories));
 
                                     ui.add_space(40.0);
 
                                     // Delete button
-                                    if
-                                        ui
-                                            .button(
-                                                egui::RichText
-                                                    ::new("Delete")
-                                                    .color(styling::AppTheme::default().error_color)
-                                            )
-                                            .clicked()
+                                    if ui.button(
+                                            egui::RichText::new("❌")
+                                                .color(styling::AppTheme::default().error_color)
+                                        ).clicked()
                                     {
                                         // Get food name for better description
                                         let food_name = entries_data[i].2.clone();
@@ -233,6 +249,11 @@ impl EditFoodLogScreen {
                         to_remove.sort_by(|a, b| b.cmp(a));
                         for index in to_remove {
                             entries.remove(index);
+                        }
+
+                        // Save after deletions
+                        if let Err(e) = crate::database::save_database(db) {
+                            eprintln!("Failed to save database after deletions: {}", e);
                         }
                     }
                 }
