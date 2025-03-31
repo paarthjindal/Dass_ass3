@@ -66,21 +66,7 @@ impl DietManagerApp {
         if let Err(e) = save_database(&self.db) {
             eprintln!("Failed to save database after '{}': {}", description, e);
         }
-
-        // Optional: Write to a separate log file
-        let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-        let log_entry = format!("[{}] {}\n", timestamp, description);
-
-        std::fs::OpenOptions
-            ::new()
-            .create(true)
-            .append(true)
-            .open("diet_manager_actions.log")
-            .map(|mut file| file.write_all(log_entry.as_bytes()))
-            .unwrap_or_else(|e| {
-                eprintln!("Failed to write to log file: {}", e);
-                Ok(())
-            });
+    
     }
 
     // Make sure to initialize the undo manager when logging in

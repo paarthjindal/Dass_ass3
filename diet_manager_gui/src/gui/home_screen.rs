@@ -164,47 +164,40 @@ impl HomeScreen {
                 } else {
                     "Undo".to_string()
                 };
+                // In the render method, update the undo button handler:
 
                 let undo_button = styling::primary_button(ui, &undo_label);
-                if undo_button.clicked() {
+                if undo_button.clicked() && undo_manager.can_undo() {
+                    // Make sure we can undo
                     if let Some((previous_db_state, action_description)) = undo_manager.undo() {
+                        // Replace current database with previous state
                         *db = previous_db_state;
 
-                        // Show notification about what was undone
-                        // Instead of toast, use a temporary in-app notification
+                        // Log the undo action to console for debugging
+                        println!("Undid action: {}", action_description);
+
+                        // Add a simple notification instead of the complex one that might be causing issues
                         self.show_notification = Some((
                             format!("Undid: {}", action_description),
                             std::time::Instant::now(),
                         ));
+
+                        // Force save the database after undo
+                        if let Err(e) = crate::database::save_database(db) {
+                            eprintln!("Failed to save database after undo: {}", e);
+                        }
                     }
                 }
-                // Display notification if we have one
+
+                // Then outside the horizontal layout, add this simple notification display:
                 if let Some((message, time)) = &self.show_notification {
                     if time.elapsed() < std::time::Duration::from_secs(3) {
-                        // Show notification at the bottom of the screen
-                        ui.allocate_ui_at_rect(
-                            egui::Rect::from_center_size(
-                                egui::Pos2::new(
-                                    ui.available_width() / 2.0,
-                                    ui.available_height() - 20.0
-                                ),
-                                egui::Vec2::new(ui.available_width() - 40.0, 30.0)
-                            ),
-                            |ui| {
-                                ui.vertical_centered(|ui| {
-                                    ui.add(
-                                        egui::Label::new(
-                                            egui::RichText
-                                                ::new(message)
-                                                .text_style(egui::TextStyle::Body)
-                                                .color(styling::AppTheme::default().accent_color)
-                                        )
-                                    );
-                                });
-                            }
+                        ui.add_space(10.0);
+                        ui.colored_label(
+                            styling::AppTheme::default().success_color,
+                            format!("✓ {}", message)
                         );
                     } else {
-                        // Clear notification after time passes
                         self.show_notification = None;
                     }
                 }

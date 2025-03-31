@@ -142,42 +142,52 @@ impl EditFoodLogScreen {
 
                                     // Servings slider
                                     let mut servings = entries_data[i].1.servings;
-                                    if
-                                        ui
-                                            .add(
-                                                egui::Slider
-                                                    ::new(&mut servings, 0.1..=10.0)
-                                                    .text("servings")
-                                                    .clamp_to_range(true)
-                                                    .step_by(0.1)
-                                                    .fixed_decimals(1)
+                                    ui.add(
+                                        egui::Slider
+                                            ::new(&mut servings, 0.1..=10.0)
+                                            .text("servings")
+                                            .clamp_to_range(true)
+                                            .step_by(0.1)
+                                            .fixed_decimals(1)
+                                    );
+
+                                    // Add the update button separately from the slider change event
+                                    if ui.button("Update Servings").clicked() {
+                                        // First gather all the info we need before any mutable borrows
+                                        let entry_id = entries_data[i].1.food_id.clone();
+                                        let food_name = entries_data[i].2.clone();
+                                        let old_servings = entries_data[i].1.servings;
+
+                                        // Record state before change - using cloned data
+                                        undo_manager.record_action(
+                                            db.clone(),
+                                            &format!(
+                                                "Changed servings of {} from {:.1} to {:.1}",
+                                                food_name,
+                                                old_servings,
+                                                servings
                                             )
-                                            .changed()
-                                    {
-                                        // Update our local copy
-                                        entries_data[i].1.servings = servings;
-                                        if ui.button("Update Servings").clicked() {
-                                            // First gather all the info we need before any mutable borrows
-                                            let entry_id = entries_data[i].1.food_id.clone();
-                                            let food_name = entries_data[i].2.clone();
-                                            let old_servings = entries_data[i].1.servings;
-                                            let new_servings = servings;
+                                        );
 
-                                            // Record state before change - using cloned data
-                                            undo_manager.record_action(
-                                                db.clone(),
-                                                &format!("Changed servings of {} from {:.1} to {:.1}", food_name, old_servings, new_servings)
-                                            );
+                                        // Now do the mutation
+                                        if
+                                            let Some(entries) = db.food_logs.get_mut(
+                                                &db.current_user
+                                            )
+                                        {
+                                            if let Some(entry) = entries.get_mut(db_index) {
+                                                // Update the entry in the database
+                                                entry.servings = servings;
 
-                                            // Now do the mutation
-                                            if let Some(entries) = db.food_logs.get_mut(&db.current_user) {
-                                                if let Some(entry) = entries.get_mut(db_index) {
-                                                    entry.servings = new_servings;
+                                                // Also update our local copy
+                                                entries_data[i].1.servings = servings;
+
+                                                // Save the database immediately
+                                                if let Err(e) = crate::database::save_database(db) {
+                                                    eprintln!("Failed to save database after updating servings: {}", e);
                                                 }
                                             }
                                         }
-
-
                                     }
 
                                     ui.add_space(40.0);
@@ -189,7 +199,15 @@ impl EditFoodLogScreen {
                                     ui.add_space(40.0);
 
                                     // Delete button
-                                    if ui.button(egui::RichText::new("Delete").color(styling::AppTheme::default().error_color)).clicked() {
+                                    if
+                                        ui
+                                            .button(
+                                                egui::RichText
+                                                    ::new("Delete")
+                                                    .color(styling::AppTheme::default().error_color)
+                                            )
+                                            .clicked()
+                                    {
                                         // Get food name for better description
                                         let food_name = entries_data[i].2.clone();
 
