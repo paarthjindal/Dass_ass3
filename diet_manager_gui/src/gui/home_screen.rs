@@ -168,24 +168,26 @@ impl HomeScreen {
 
                 let undo_button = styling::primary_button(ui, &undo_label);
                 if undo_button.clicked() && undo_manager.can_undo() {
-                    // Make sure we can undo
-                    if let Some((previous_db_state, action_description)) = undo_manager.undo() {
-                        // Replace current database with previous state
-                        *db = previous_db_state;
+                    println!("Undo button clicked");
 
-                        // Log the undo action to console for debugging
-                        println!("Undid action: {}", action_description);
+                    // Print debug state before undo
+                    undo_manager.debug_print_state();
 
-                        // Add a simple notification instead of the complex one that might be causing issues
-                        self.show_notification = Some((
-                            format!("Undid: {}", action_description),
-                            std::time::Instant::now(),
-                        ));
+                    if let Some((previous_db, action)) = undo_manager.undo() {
+                        println!("Undoing: {}", action);
+                        *db = previous_db;
 
-                        // Force save the database after undo
+                        // Print debug state after undo
+                        undo_manager.debug_print_state();
+
+                        self.show_notification = Some((format!("Undid: {}", action), std::time::Instant::now()));
+
+                        // Save database after undo
                         if let Err(e) = crate::database::save_database(db) {
                             eprintln!("Failed to save database after undo: {}", e);
                         }
+                    } else {
+                        println!("Nothing to undo!");
                     }
                 }
 
