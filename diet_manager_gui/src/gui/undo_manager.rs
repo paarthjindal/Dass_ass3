@@ -32,7 +32,7 @@ impl UndoManager {
             self.history.truncate(self.current_index + 1);
         }
 
-        // Add new action - we'll skip the database comparison for now
+        // Add new action
         self.history.push((db_snapshot.clone(), description.to_string()));
         self.current_index = self.history.len() - 1;
         println!("Current index after recording: {}", self.current_index);
@@ -58,8 +58,6 @@ impl UndoManager {
             }).ok();
     }
 
-    // Removed the are_databases_identical function as it requires PartialEq implementations
-
     pub fn can_undo(&self) -> bool {
         self.current_index > 0
     }
@@ -70,7 +68,7 @@ impl UndoManager {
 
             // The action being undone is at the current index
             let current_action = self.history[self.current_index].1.clone();
-            println!("Current action: {}", current_action);
+
             // Move back one step in history
             self.current_index -= 1;
 
@@ -94,37 +92,6 @@ impl UndoManager {
                 }).ok();
 
             return Some((db.clone(), current_action));
-        }
-        None
-    }
-
-    pub fn can_redo(&self) -> bool {
-        self.history.len() > 1 && self.current_index < self.history.len() - 1
-    }
-
-    pub fn redo(&mut self) -> Option<(Database, String)> {
-        if self.can_redo() {
-            // Move forward one step in history
-            self.current_index += 1;
-            
-            // Get the action being redone
-            let (db, action) = &self.history[self.current_index];
-            
-            let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-            let log_entry = format!("[{}] REDO: {}\n", timestamp, action);
-            
-            // Log the redo action
-            std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("diet_manager_actions.log")
-                .map(|mut file| file.write_all(log_entry.as_bytes()))
-                .unwrap_or_else(|e| {
-                    eprintln!("Failed to write redo to log file: {}", e);
-                    Ok(())
-                }).ok();
-                
-            return Some((db.clone(), action.clone()));
         }
         None
     }

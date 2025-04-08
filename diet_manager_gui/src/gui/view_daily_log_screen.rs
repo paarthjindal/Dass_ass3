@@ -196,8 +196,8 @@ impl ViewDailyLogScreen {
                                              println!("Successfully recorded undo action");
                                         }
                                         else {
-                                            println!("Failed to find entry to delete");
-                                        }
+                                        println!("Failed to find entry to delete");
+                                    }
                                     }
                                     ui.add_space(10.0);
                                     ui.label(format!("{:.0} kcal", calories));
