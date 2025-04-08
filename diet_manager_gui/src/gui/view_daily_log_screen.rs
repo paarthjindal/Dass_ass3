@@ -171,10 +171,12 @@ impl ViewDailyLogScreen {
                                             .map(|f| f.name.clone())
                                             .or_else(|| db.composite_foods.get(&entry.food_id).map(|f| f.name.clone()))
                                             .unwrap_or_else(|| entry.food_id.clone());
-
-                                        // Record state before deletion
-                                        undo_manager.record_action(db.clone(), &format!("Removed {} from food log", food_name));
-
+                                        println!("Attempting to delete food entry: {}", food_name);
+                                        // Record state BEFORE deletion
+                                        let db_before_delete = db.clone();
+                                        
+                                        // Perform the deletion
+                                        let mut deleted = false;
                                         if let Some(entries) = db.food_logs.get_mut(&db.current_user) {
                                             if let Some(pos) = entries.iter().position(|e|
                                                 e.date == entry.date &&
@@ -182,8 +184,19 @@ impl ViewDailyLogScreen {
                                                 e.servings == entry.servings &&
                                                 e.user_id == entry.user_id
                                             ) {
+                                                println!("Found entry at position {}, removing...", pos);
                                                 entries.remove(pos);
+                                                deleted = true;
                                             }
+                                        }
+                                        
+                                        // Only record the action if deletion was successful
+                                        if deleted {
+                                            undo_manager.record_action(db_before_delete, &format!("Removed {} from food log", food_name));
+                                             println!("Successfully recorded undo action");
+                                        }
+                                        else {
+                                            println!("Failed to find entry to delete");
                                         }
                                     }
                                     ui.add_space(10.0);

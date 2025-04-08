@@ -7,6 +7,7 @@ use crate::gui::styling;
 pub struct HomeScreen {
     show_notification: Option<(String, std::time::Instant)>,
 }
+
 impl Default for HomeScreen {
     fn default() -> Self {
         Self {
@@ -28,11 +29,9 @@ impl HomeScreen {
             ui.heading(egui::RichText::new("Diet Manager Dashboard").size(28.0).strong());
             ui.add_space(8.0);
 
-            // Show current user's username if available with enhanced styling
             if let Some(user) = db.users.values().find(|u| u.user_id == db.current_user) {
                 ui.label(
-                    egui::RichText
-                        ::new(format!("Welcome, {}!", user.username))
+                    egui::RichText::new(format!("Welcome, {}!", user.username))
                         .size(20.0)
                         .color(styling::AppTheme::default().accent_color)
                 );
@@ -40,7 +39,7 @@ impl HomeScreen {
             ui.add_space(16.0);
         });
 
-        // Calculate and display calorie information for current user
+        // Calculate and display calorie information
         if !db.current_user.is_empty() {
             let date = chrono::Local::now().format("%Y-%m-%d").to_string();
             let (total_calories, target_calories, difference) = self.calculate_user_calories(
@@ -54,14 +53,12 @@ impl HomeScreen {
                 styling::section_header(ui, "Today's Nutrition Summary");
                 ui.add_space(8.0);
 
-                // Create a 3-column layout for calories display
                 ui.columns(3, |cols| {
                     // Consumed calories
                     cols[0].vertical_centered(|ui| {
                         ui.label(egui::RichText::new("Consumed").size(14.0));
                         ui.label(
-                            egui::RichText
-                                ::new(format!("{:.0} kcal", total_calories))
+                            egui::RichText::new(format!("{:.0} kcal", total_calories))
                                 .size(22.0)
                                 .color(styling::AppTheme::default().text_color)
                         );
@@ -71,18 +68,16 @@ impl HomeScreen {
                     cols[1].vertical_centered(|ui| {
                         ui.label(egui::RichText::new("Target").size(14.0));
                         ui.label(
-                            egui::RichText
-                                ::new(format!("{:.0} kcal", target_calories))
+                            egui::RichText::new(format!("{:.0} kcal", target_calories))
                                 .size(22.0)
                                 .color(styling::AppTheme::default().text_color)
                         );
                     });
 
-                    // Remaining calories with color coding
+                    // Remaining calories
                     cols[2].vertical_centered(|ui| {
                         ui.label(
-                            egui::RichText
-                                ::new(if difference >= 0.0 { "Remaining" } else { "Exceeded" })
+                            egui::RichText::new(if difference >= 0.0 { "Remaining" } else { "Exceeded" })
                                 .size(14.0)
                         );
                         let color = if difference >= 0.0 {
@@ -91,8 +86,7 @@ impl HomeScreen {
                             styling::AppTheme::default().error_color
                         };
                         ui.label(
-                            egui::RichText
-                                ::new(format!("{:.0} kcal", difference.abs()))
+                            egui::RichText::new(format!("{:.0} kcal", difference.abs()))
                                 .size(22.0)
                                 .color(color)
                         );
@@ -105,8 +99,7 @@ impl HomeScreen {
                 if target_calories > 0.0 {
                     let progress = total_calories / target_calories;
                     let progress_text = format!("{:.1}% of daily goal", progress * 100.0);
-                    let progress_bar = egui::ProgressBar
-                        ::new(progress.clamp(0.0, 1.0))
+                    let progress_bar = egui::ProgressBar::new(progress.clamp(0.0, 1.0))
                         .text(progress_text)
                         .animate(true);
                     ui.add(progress_bar);
@@ -120,9 +113,7 @@ impl HomeScreen {
         styling::section_header(ui, "Quick Actions");
         ui.add_space(8.0);
 
-        // Use a grid for menu buttons
-        egui::Grid
-            ::new("home_buttons")
+        egui::Grid::new("home_buttons")
             .num_columns(3)
             .spacing([16.0, 16.0])
             .show(ui, |ui| {
@@ -147,6 +138,11 @@ impl HomeScreen {
                     *current_state = AppState::UpdateProfile;
                 });
                 ui.end_row();
+
+                self.menu_button(ui, "Download Food Data", "🌐", || {
+                    *current_state = AppState::DownloadFoodData;
+                });
+                ui.end_row();
             });
 
         ui.add_space(16.0);
@@ -164,34 +160,28 @@ impl HomeScreen {
                 } else {
                     "Undo".to_string()
                 };
-                // In the render method, update the undo button handler:
 
                 let undo_button = styling::primary_button(ui, &undo_label);
                 if undo_button.clicked() && undo_manager.can_undo() {
-                    println!("Undo button clicked");
-
-                    // Print debug state before undo
+                    println!("[DEBUG] Undo button clicked - current state before undo:");
                     undo_manager.debug_print_state();
 
                     if let Some((previous_db, action)) = undo_manager.undo() {
-                        println!("Undoing: {}", action);
+                        println!("[DEBUG] Applying undo for: {}", action);
                         *db = previous_db;
 
-                        // Print debug state after undo
-                        undo_manager.debug_print_state();
-
-                        self.show_notification = Some((format!("Undid: {}", action), std::time::Instant::now()));
-
-                        // Save database after undo
                         if let Err(e) = crate::database::save_database(db) {
                             eprintln!("Failed to save database after undo: {}", e);
                         }
-                    } else {
-                        println!("Nothing to undo!");
+
+                        self.show_notification = Some((format!("Undid: {}", action), std::time::Instant::now()));
                     }
                 }
 
-                // Then outside the horizontal layout, add this simple notification display:
+                if !undo_manager.can_undo() {
+                    undo_button.on_disabled_hover_text("Nothing to undo");
+                }
+
                 if let Some((message, time)) = &self.show_notification {
                     if time.elapsed() < std::time::Duration::from_secs(3) {
                         ui.add_space(10.0);
@@ -203,15 +193,10 @@ impl HomeScreen {
                         self.show_notification = None;
                     }
                 }
-                // Disable button when no actions to undo
-                if !undo_manager.can_undo() {
-                    undo_button.on_disabled_hover_text("Nothing to undo");
-                }
             });
         });
     }
 
-    // Helper method for creating attractive menu buttons
     fn menu_button(
         &self,
         ui: &mut egui::Ui,
@@ -224,8 +209,7 @@ impl HomeScreen {
 
         let button = ui.add_sized(
             [120.0, button_height],
-            egui::Button
-                ::new(egui::RichText::new(format!("{}\n{}", icon, title)).size(18.0).strong())
+            egui::Button::new(egui::RichText::new(format!("{}\n{}", icon, title)).size(18.0).strong())
                 .fill(theme.primary_color.gamma_multiply(0.7))
         );
 
@@ -236,9 +220,7 @@ impl HomeScreen {
         button
     }
 
-    // Existing method for calculating calories
     fn calculate_user_calories(&self, db: &Database, user_id: &str, date: &str) -> (f32, f32, f32) {
-        // Your existing code here...
         let total_calories = db.food_logs.get(user_id).map_or(0.0, |entries| {
             entries
                 .iter()

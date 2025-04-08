@@ -8,4 +8,5 @@ pub enum AppState {
     AddFoodToLog,
     EditFoodLog,
     UpdateProfile,
+    DownloadFoodData,
 }

@@ -15,24 +15,6 @@
     }
   },
   "basic_foods": {
-    "brown_rice": {
-      "id": "brown_rice",
-      "name": "Brown Rice",
-      "keywords": [
-        "grain",
-        "carbs",
-        "whole grain"
-      ],
-      "calories_per_serving": 215.0
-    },
-    "Milk": {
-      "id": "Milk",
-      "name": "Milk",
-      "keywords": [
-        "Calcium"
-      ],
-      "calories_per_serving": 90.0
-    },
     "egg": {
       "id": "egg",
       "name": "Egg",
@@ -51,15 +33,13 @@
       ],
       "calories_per_serving": 80.0
     },
-    "apple": {
-      "id": "apple",
-      "name": "Apple",
+    "Milk": {
+      "id": "Milk",
+      "name": "Milk",
       "keywords": [
-        "fruit",
-        "fresh",
-        "snack"
+        "Calcium"
       ],
-      "calories_per_serving": 95.0
+      "calories_per_serving": 90.0
     },
     "chicken_breast": {
       "id": "chicken_breast",
@@ -71,6 +51,16 @@
       ],
       "calories_per_serving": 165.0
     },
+    "apple": {
+      "id": "apple",
+      "name": "Apple",
+      "keywords": [
+        "fruit",
+        "fresh",
+        "snack"
+      ],
+      "calories_per_serving": 95.0
+    },
     "banana": {
       "id": "banana",
       "name": "Banana",
@@ -80,9 +70,33 @@
         "potassium"
       ],
       "calories_per_serving": 105.0
+    },
+    "brown_rice": {
+      "id": "brown_rice",
+      "name": "Brown Rice",
+      "keywords": [
+        "grain",
+        "carbs",
+        "whole grain"
+      ],
+      "calories_per_serving": 215.0
     }
   },
   "composite_foods": {
+    "banana_oatmeal": {
+      "id": "banana_oatmeal",
+      "name": "Banana Oatmeal",
+      "keywords": [
+        "breakfast",
+        "healthy"
+      ],
+      "components": [
+        {
+          "food_id": "banana",
+          "servings": 1.0
+        }
+      ]
+    },
     "sandwich": {
       "id": "sandwich",
       "name": "Basic Sandwich",
@@ -99,20 +113,6 @@
         {
           "food_id": "bread",
           "servings": 2.0
-        }
-      ]
-    },
-    "banana_oatmeal": {
-      "id": "banana_oatmeal",
-      "name": "Banana Oatmeal",
-      "keywords": [
-        "breakfast",
-        "healthy"
-      ],
-      "components": [
-        {
-          "food_id": "banana",
-          "servings": 1.0
         }
       ]
     }
@@ -146,6 +146,42 @@
       {
         "date": "2025-03-31",
         "food_id": "brown_rice",
+        "servings": 1.0,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-04-08",
+        "food_id": "egg",
+        "servings": 1.0,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-04-01",
+        "food_id": "banana",
+        "servings": 1.0,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-04-08",
+        "food_id": "chicken_breast",
+        "servings": 1.0,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-04-08",
+        "food_id": "sandwich",
+        "servings": 1.0,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-04-08",
+        "food_id": "bread",
+        "servings": 1.0,
+        "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
+      },
+      {
+        "date": "2025-04-07",
+        "food_id": "apple",
         "servings": 1.0,
         "user_id": "aa1cd353-8db5-4ea0-bb74-e66bac54f6d1"
       }
